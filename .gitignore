@@ -1,0 +1,27 @@
+# Maven build output
+target/
+*.class
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# OS specific files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Sensitive configuration files containing real passwords
+src/main/resources/db.properties
+db.properties
+!src/main/resources/db.properties.example
+
+# Log files
+*.log
+logs/

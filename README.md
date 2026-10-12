@@ -1,247 +1,194 @@
-# CrowdCheck – Live Crowd Monitoring System
+# CrowdCheck — Live Crowd Monitoring System
+## Spring Boot 3.x & MySQL 8.x Web Application
 
-A robust, enterprise-grade Console DBMS application built in **Java 17**, **JDBC**, and **MySQL 8.0** to monitor, track, and regulate real-time crowd occupancy across campus facilities (Auditoriums, Cafeterias, Libraries, Sports Arenas, Labs, and Gates).
+A full-stack campus crowd monitoring system built using **Java 17**, **Spring Boot 3.2.4**, **Spring Data JPA**, **Hibernate**, **MySQL 8.x**, and a responsive **HTML/CSS/JS** frontend dashboard.
 
 ---
 
 ## 📋 Table of Contents
-1. [Project Overview](#project-overview)
-2. [Key Functionalities](#key-functionalities)
-3. [Crowd Classification Rules](#crowd-classification-rules)
-4. [Technology Stack](#technology-stack)
-5. [Project Structure](#project-structure)
-6. [Database Setup & Configuration](#database-setup--configuration)
-7. [Building and Running](#building-and-running)
-8. [Sample Credentials](#sample-credentials)
-9. [Sample Workflows & Usage](#sample-workflows--usage)
-10. [Troubleshooting](#troubleshooting)
+1. [Technology Stack](#technology-stack)
+2. [Project Structure](#project-structure)
+3. [Database Setup](#database-setup)
+4. [Running the Application](#running-the-application)
+5. [REST API Endpoints](#rest-api-endpoints)
+6. [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
+7. [Testing & Verification](#testing--verification)
+8. [Demonstration Guide](#demonstration-guide)
 
 ---
 
-## 🌟 Project Overview
-
-CrowdCheck was engineered to solve overcrowding, stampede hazards, and facility congestion across college campuses. Using transactional JDBC database routines, the system maintains accurate, real-time headcounts, audits every change, generates safety alerts on high and critical occupancies, and provides historical analytical reports for campus administrators.
-
----
-
-## 🎯 Key Functionalities
-
-1. **Location Management:** Complete CRUD capabilities to register, update capacities, search, and safely delete facilities.
-2. **Transactional Crowd Updates:** Atomic database updates that modify live headcounts and write historical audit records simultaneously.
-3. **Live Status Display:** Formatted console tables presenting location metrics, capacities, occupancy percentage, and status indicators.
-4. **Flexible Search:** Multi-parameter search across facility IDs, keywords, categories, and crowd levels.
-5. **Automated Classification:** Mathematical evaluation of crowd density based on capacity thresholds.
-6. **Alert Generation & Deduplication:** Immediate trigger of alerts on `HIGH` and `CRITICAL` levels, preventing duplicate active notifications.
-7. **Alert Lifecycle Management:** View, acknowledge, and resolve alerts while retaining complete audit history.
-8. **Historical Audit & Analytics:** Campus-wide and facility-specific analytics, peak occupancy stats, and hotspot detection.
-9. **Role-Based Access Control (RBAC):** Distinct privileges for `ADMIN`, `ORGANIZER`, `STAFF`, and `VISITOR`.
-10. **Secure Credentials:** SHA-256 password hashing and decoupled configuration via environment variables or properties files.
+## 💻 1. Technology Stack
+- **Language:** Java 17
+- **Framework:** Spring Boot 3.2.4 (`spring-boot-starter-web`, `spring-boot-starter-data-jpa`, `spring-boot-starter-validation`)
+- **Persistence:** Spring Data JPA / Hibernate ORM
+- **Database:** MySQL Server 8.0+ (`com.mysql:mysql-connector-j`)
+- **Frontend:** Vanilla HTML5, CSS3, and JavaScript (`fetch()` API)
+- **Testing:** JUnit 5 (Jupiter), Mockito, Spring Boot Test
 
 ---
 
-## 📐 Crowd Classification Rules
-
-The occupancy percentage is calculated using:
-$$\text{Occupancy (\%)} = \left(\frac{\text{Current Crowd Count}}{\text{Designated Capacity}}\right) \times 100$$
-
-| Level | Occupancy Range | Description & Action |
-|---|---|---|
-| **LOW** | Occupancy strictly below 40% ($< 40\%$) | Ample capacity available. Green indicator. |
-| **MODERATE** | 40% to below 70% ($40\% \le \text{Occ} < 70\%$) | Normal operational traffic. Yellow indicator. |
-| **HIGH** | 70% to below 90% ($70\% \le \text{Occ} < 90\%$) | Approaching capacity limit. Safety alert triggered. |
-| **CRITICAL** | 90% and above ($\ge 90\%$) or overflow | Overcrowding / emergency threshold. High-priority alert triggered. |
-
----
-
-## 💻 Technology Stack
-
-- **Language:** Java 17 (Eclipse Temurin / OpenJDK 17)
-- **Database:** MySQL Server 8.0+
-- **Driver:** MySQL Connector/J 8.3.0 (`com.mysql.cj.jdbc.Driver`)
-- **Build System:** Apache Maven 3.9+
-- **Testing Framework:** JUnit 5 (Jupiter 5.10.2)
-- **Architecture:** Layered Model-DAO-Service-UI architecture with JDBC transactions
-
----
-
-## 📂 Project Structure
+## 📂 2. Project Structure
 
 ```
 CrowdCheck/
-├── pom.xml                               # Maven project definition and plugins
-├── README.md                             # Comprehensive project documentation
-├── .gitignore                            # Excludes build artifacts and secrets
+├── pom.xml                                   # Maven Spring Boot configuration
+├── README.md                                 # Complete documentation & demonstration guide
 ├── database/
-│   ├── schema.sql                        # Table definitions, DDL, constraints & indexes
-│   ├── sample_data.sql                   # Initial seed data with hashed passwords
-│   └── reset_database.sql                # Complete database teardown & re-seed script
-├── docs/
-│   ├── project_report.md                 # Full DBMS college project report
-│   ├── database_design.md                # Schema documentation, ER model, & SQL queries
-│   └── test_cases.md                     # Comprehensive test scenarios & verification
-├── src/
-│   ├── main/
-│   │   ├── java/com/crowdcheck/
-│   │   │   ├── Main.java                 # Main application bootstrap
-│   │   │   ├── config/
-│   │   │   │   └── DatabaseConnection.java # Singleton JDBC manager & env loader
-│   │   │   ├── dao/
-│   │   │   │   ├── CrowdAlertDAO.java    # Alert queries & lifecycle updates
-│   │   │   │   ├── CrowdUpdateDAO.java   # Update history logging & aggregations
-│   │   │   │   ├── LocationDAO.java      # Location CRUD & transactional updates
-│   │   │   │   └── UserDAO.java          # User persistence & authentication queries
-│   │   │   ├── enums/
-│   │   │   │   ├── AlertStatus.java      # ACTIVE, ACKNOWLEDGED, RESOLVED
-│   │   │   │   ├── CrowdLevel.java       # LOW, MODERATE, HIGH, CRITICAL
-│   │   │   │   ├── LocationType.java     # AUDITORIUM, CAFETERIA, LIBRARY, etc.
-│   │   │   │   └── UserRole.java         # ADMIN, ORGANIZER, STAFF, VISITOR
-│   │   │   ├── model/
-│   │   │   │   ├── CrowdAlert.java       # Alert data entity
-│   │   │   │   ├── CrowdUpdate.java      # Audit update entity
-│   │   │   │   ├── Location.java         # Facility entity
-│   │   │   │   └── User.java             # User entity
-│   │   │   ├── service/
-│   │   │   │   ├── AlertService.java     # Alert evaluation & state logic
-│   │   │   │   ├── AuthenticationService.java # SHA-256 hashing & session state
-│   │   │   │   ├── CrowdLevelCalculator.java # Density calculator & progress bars
-│   │   │   │   └── CrowdMonitoringService.java # Transactional update coordinator
-│   │   │   └── ui/
-│   │   │       ├── ConsoleMenu.java      # Interactive 10-option console UI
-│   │   │       └── InputValidator.java   # Input filtering & regex verifiers
-│   │   └── resources/
-│   │       ├── db.properties             # Local database credentials
-│   │       └── db.properties.example     # Template credentials file
-│   └── test/
-│       └── java/com/crowdcheck/
-│           ├── AlertServiceTest.java     # Alert rule verification tests
-│           ├── CrowdLevelCalculatorTest.java # Boundary & classification unit tests
-│           └── InputValidatorTest.java   # Email, phone, & hashing unit tests
-└── scripts/
-    ├── run.bat                           # One-click Windows runner
-    └── run.sh                            # One-click Linux/macOS runner
+│   ├── schema.sql                            # 4 MySQL table schemas & constraints
+│   └── sample_data.sql                       # Seed data for locations, updates, alerts
+├── src/main/java/com/crowdcheck/
+│   ├── CrowdCheckApplication.java            # Main Spring Boot bootstrap
+│   ├── entity/
+│   │   ├── User.java                         # USERS JPA entity
+│   │   ├── Location.java                     # LOCATIONS JPA entity
+│   │   ├── CrowdUpdate.java                  # CROWD_UPDATES JPA entity
+│   │   └── CrowdAlert.java                   # CROWD_ALERTS JPA entity
+│   ├── repository/
+│   │   ├── UserRepository.java               # Spring Data JPA User repository
+│   │   ├── LocationRepository.java           # Location queries & dynamic search
+│   │   ├── CrowdUpdateRepository.java        # History & hotspot analysis query
+│   │   └── CrowdAlertRepository.java         # Alert deduplication & lifecycle query
+│   ├── service/
+│   │   ├── UserService.java                  # User logic & RBAC checks
+│   │   ├── LocationService.java              # Location CRUD & safe deletion logic
+│   │   ├── CrowdMonitoringService.java       # Transactional crowd updates & calculation
+│   │   └── AlertService.java                 # Alert rules, deduplication & transitions
+│   ├── controller/
+│   │   ├── UserController.java               # /api/users endpoints
+│   │   ├── LocationController.java           # /api/locations endpoints
+│   │   ├── CrowdUpdateController.java        # /api/crowd endpoints
+│   │   └── CrowdAlertController.java         # /api/alerts endpoints
+│   ├── dto/
+│   │   ├── CrowdUpdateRequest.java           # Location ID & new count request
+│   │   └── LocationResponse.java             # Live crowd status DTO
+│   └── exception/
+│       └── GlobalExceptionHandler.java       # Centralized REST exception handling
+├── src/main/resources/
+│   ├── application.properties                # Spring Boot datasource & JPA settings
+│   └── static/
+│       ├── index.html                        # Live Dashboard UI
+│       ├── style.css                         # Clean, modern, responsive styles
+│       └── script.js                         # Plain JavaScript fetch client
+└── src/test/java/com/crowdcheck/
+    ├── CrowdLevelCalculationTest.java        # Density calculation boundary tests
+    ├── AlertServiceLogicTest.java            # Alert rules & deduplication tests
+    └── LocationServiceTest.java              # Capacity validation & safe deletion tests
 ```
 
 ---
 
-## 🗄️ Database Setup & Configuration
+## 🗄️ 3. Database Setup
 
-### 1. Initialize MySQL Database
-Open your MySQL terminal or MySQL Workbench and run:
-```sql
-SOURCE D:/Projects/DBMS/CrowdCheck/database/schema.sql;
-SOURCE D:/Projects/DBMS/CrowdCheck/database/sample_data.sql;
+### Tables (Strict 4-Table Schema)
+1. **`USERS`**: `user_id` (PK), `user_name`, `email`, `contact_info`, `user_role` (`ADMIN`, `ORGANIZER`, `STAFF`, `VISITOR`).
+2. **`LOCATIONS`**: `location_id` (PK), `location_name`, `location_type` (`ENTRANCE`, `FOOD_COURT`, `AUDITORIUM`, `PARKING`), `capacity`, `current_crowd_count`, `crowd_level`, `last_updated`.
+3. **`CROWD_ALERTS`**: `alert_id` (PK), `location_id` (FK), `alert_message`, `alert_time`, `crowd_level`, `status` (`ACTIVE`, `ACKNOWLEDGED`, `RESOLVED`).
+4. **`CROWD_UPDATES`**: `update_id` (PK), `location_id` (FK), `previous_count`, `new_count`, `crowd_level`, `update_time`.
+
+### Initialize MySQL
+Run the scripts in MySQL Workbench or PowerShell:
+```powershell
+Get-Content "database/schema.sql" | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p
+Get-Content "database/sample_data.sql" | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p
 ```
-Or execute directly from PowerShell/Command Prompt:
-```bash
-mysql -u root -p < database/schema.sql
-mysql -u root -p < database/sample_data.sql
-```
 
-### 2. Configure Credentials
-The system checks credentials in the following order:
-1. **Environment Variables:** `DB_URL`, `DB_USER`, `DB_PASSWORD`
-2. **External file:** `./db.properties` in current working directory
-3. **Classpath resource:** `src/main/resources/db.properties`
-
-Example `db.properties`:
+### Configure Credentials
+In `src/main/resources/application.properties`:
 ```properties
-db.driver=com.mysql.cj.jdbc.Driver
-db.url=jdbc:mysql://localhost:3306/crowdcheck?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
-db.user=root
-db.password=your_mysql_password
+spring.datasource.url=jdbc:mysql://localhost:3306/crowdcheck?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+spring.datasource.username=root
+spring.datasource.password=your_mysql_password
 ```
 
 ---
 
-## 🚀 Building and Running
+## 🚀 4. Running the Application
 
-### Prerequisites
-- JDK 17 or higher (`java -version`)
-- Apache Maven 3.8+ (`mvn -version`)
-- MySQL 8.0 running on localhost:3306
-
-### Compile & Test
+### Option A: Using Maven (Recommended)
 ```bash
-cd CrowdCheck
+mvn spring-boot:run
+```
+
+### Option B: Package and Run JAR
+```bash
+mvn clean package -DskipTests
+java -jar target/CrowdCheck-1.0.0.jar
+```
+
+### Accessing the Web Dashboard
+Open your browser and navigate to:
+```
+http://localhost:8080
+```
+
+---
+
+## 🌐 5. REST API Endpoints
+
+### Location Management (`/api/locations`)
+| Method | Endpoint | Description | Permitted Roles |
+|---|---|---|---|
+| `GET` | `/api/locations` | Retrieve all locations with live occupancy | Any |
+| `GET` | `/api/locations/{id}` | Retrieve specific location details | Any |
+| `GET` | `/api/locations/search` | Search by `name`, `type`, `level` | Any |
+| `POST` | `/api/locations` | Register new campus location | `ADMIN`, `ORGANIZER` |
+| `PUT` | `/api/locations/{id}` | Update location details/capacity | `ADMIN`, `ORGANIZER` |
+| `DELETE` | `/api/locations/{id}` | Safely delete location (rejects if updates exist) | `ADMIN`, `ORGANIZER` |
+
+### Crowd Management & History (`/api/crowd`)
+| Method | Endpoint | Description | Permitted Roles |
+|---|---|---|---|
+| `POST` | `/api/crowd/update` | Transactional crowd count update | `ADMIN`, `ORGANIZER`, `STAFF` |
+| `GET` | `/api/crowd/history` | Complete historical audit trail | Any |
+| `GET` | `/api/crowd/history/{id}` | Facility-specific update history | Any |
+| `GET` | `/api/crowd/analysis/frequent-overcrowded` | Locations with highest HIGH/CRITICAL counts | Any |
+
+### Crowd Safety Alerts (`/api/alerts`)
+| Method | Endpoint | Description | Permitted Roles |
+|---|---|---|---|
+| `GET` | `/api/alerts` | List all crowd alerts | Any |
+| `GET` | `/api/alerts/active` | List only active safety alerts | Any |
+| `PUT` | `/api/alerts/{id}/acknowledge` | Acknowledge alert | `ADMIN`, `ORGANIZER`, `STAFF` |
+| `PUT` | `/api/alerts/{id}/resolve` | Resolve alert | `ADMIN`, `ORGANIZER`, `STAFF` |
+
+---
+
+## 🔐 6. Role-Based Access Control (RBAC)
+- **`ADMIN`:** Complete control across facility CRUD, crowd updates, alerts, and audit history.
+- **`ORGANIZER`:** Event facility management, crowd updates, alerts, and analysis.
+- **`STAFF`:** Live headcount adjustments and safety alert lifecycle management.
+- **`VISITOR`:** Read-only access to view live statuses and search locations.
+
+The Web UI features a real-time **Acting Role Selector** at the top right to dynamically demonstrate these restrictions.
+
+---
+
+## 🧪 7. Testing & Verification
+
+Run all unit tests with Maven:
+```bash
 mvn clean test
 ```
 
-### Build Executable Fat JAR
-```bash
-mvn package
-```
-This produces `target/crowdcheck.jar` bundled with all required JDBC dependencies.
-
-### Run in Terminal
-Using java directly:
-```bash
-java -jar target/crowdcheck.jar
-```
-Or with Maven:
-```bash
-mvn exec:java
-```
-Or run the bundled launcher:
-- **Windows:** `.\scripts\run.bat`
-- **Linux/macOS:** `./scripts/run.sh`
-
-### Run in Visual Studio Code
-1. Open Visual Studio Code and choose **File > Open Folder...** -> select `d:\Projects\DBMS\CrowdCheck`.
-2. Open `src/main/java/com/crowdcheck/Main.java`.
-3. Press **F5** or click **Run Java** at the top right of the editor.
-4. Alternatively, open the integrated terminal (`Ctrl + \``) and run:
-   ```bash
-   mvn clean package
-   java -jar target/crowdcheck.jar
-   ```
+### Test Coverage Highlights
+- **`CrowdLevelCalculationTest`:** Validates discrete boundaries:
+  - `< 40%` $\rightarrow$ `LOW`
+  - `40% - 69.9%` $\rightarrow$ `MODERATE`
+  - `70% - 89.9%` $\rightarrow$ `HIGH`
+  - `≥ 90%` $\rightarrow$ `CRITICAL`
+  - Overcapacity ($> 100\%$) $\rightarrow$ `CRITICAL`
+  - Negative counts and non-positive capacities $\rightarrow$ `IllegalArgumentException`
+- **`AlertServiceLogicTest`:** Validates automated alert triggering on `HIGH`/`CRITICAL`, duplicate active alert suppression, and safe level non-alerting.
+- **`LocationServiceTest`:** Validates capacity restrictions, location type checks, and safe deletion prevention when history exists.
 
 ---
 
-## 🔑 Sample Credentials
+## 🎥 8. Demonstration Guide
 
-The sample data script seeds accounts for all four user roles with SHA-256 hashed passwords:
-
-| Username | Role | Password | Description & Permissions |
-|---|---|---|---|
-| `admin` | **ADMIN** | `Admin@123` | Full administrative control: Manage users, facilities, and alerts. |
-| `organizer_rachel` | **ORGANIZER** | `Organizer@123` | Event coordination: Manage facilities, update headcounts, view reports. |
-| `staff_john` | **STAFF** | `Staff@123` | Operational staff: Update crowd counts, view and manage safety alerts. |
-| `staff_priya` | **STAFF** | `Staff@123` | Operational staff: Stationed at cafeteria / labs. |
-| `visitor_alex` | **VISITOR** | `Visitor@123` | Read-only campus visitor: Check live status and search facilities. |
-
----
-
-## 🔄 Sample Workflows & Usage
-
-### Workflow 1: Live Status Check (Visitor/Student)
-1. Launch application (Guest mode active).
-2. Choose **Option 2: View live crowd status**.
-3. View real-time occupancy percentages, crowd levels, and visual capacity indicators across campus.
-
-### Workflow 2: Update Crowd & Trigger High-Capacity Alert (Staff)
-1. Choose **Option 1: Login** -> enter `staff_john` / `Staff@123`.
-2. Choose **Option 4: Update crowd count**.
-3. Select Location `3` (University Library, capacity 300).
-4. Enter new crowd count `270` (90.0% occupancy).
-5. System computes new level `CRITICAL`, updates `LOCATIONS`, inserts `CROWD_UPDATES` audit row, and automatically triggers an active safety alert.
-
-### Workflow 3: Acknowledge & Resolve Safety Alert (Staff/Organizer)
-1. Choose **Option 6: View alerts** to review active alert details.
-2. Choose **Option 7: Manage alerts** -> Select `1` (Acknowledge) to mark that personnel are dispatching.
-3. Later, when crowd levels dissipate or are directed, select `2` (Resolve) to close the alert.
-
-### Workflow 4: Register Facility & View Analytics (Admin)
-1. Login as `admin` / `Admin@123`.
-2. Choose **Option 5: Manage locations** -> Add new facility: "Robotics Auditorium", Capacity 350.
-3. Choose **Option 9: Crowd analysis and reports** to review top overcrowding hotspots across the semester.
-
----
-
-## 🛠️ Troubleshooting
-
-- **Error: Access denied for user 'root'@'localhost'**:
-  Ensure your MySQL root password is configured in `db.properties` or set via `$env:DB_PASSWORD="your_password"`.
-- **Error: Communications link failure**:
-  Verify the MySQL 8.0 service is running in Windows Services (`services.msc`) or via `Start-Service MySQL80`.
-- **Database 'crowdcheck' not found**:
-  Execute `database/schema.sql` to create the schema and initial tables before running the app.
+1. **Start Application:** Execute `mvn spring-boot:run`. Open `http://localhost:8080`.
+2. **View Live Status:** The dashboard shows facility cards with real-time occupancy percentages, crowd levels, and visual progress bars.
+3. **Search & Filter:** Type "Auditorium" in the search box or filter by `FOOD_COURT` to observe instant filtering.
+4. **Update Crowd Count:** Select *Grand Auditorium* and submit a new count of `470` (94.0%). The facility turns `CRITICAL` (red) and an alert is automatically generated in the Alerts table.
+5. **Manage Alerts:** Click **Ack** on the newly created alert to mark it acknowledged, then click **Resolve** to close it.
+6. **Safe Deletion Check:** Attempting to delete a facility that already has update history will be blocked to preserve audit integrity.
+7. **Test Role Restrictions:** Switch the top right dropdown from `ADMIN` to `VISITOR` — observe that facility editing and headcount submission controls are immediately disabled!

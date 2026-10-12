@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrowdCheck — Live Crowd Monitoring System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo">
+                <span class="logo-icon">📊</span>
+                <h1>CrowdCheck</h1>
+                <span class="subtitle">Live Campus Crowd Monitoring</span>
+            </div>
+            <div class="role-selector-box">
+                <label for="currentRole">Acting Role:</label>
+                <select id="currentRole" onchange="onRoleChange()">
+                    <option value="ADMIN" selected>ADMIN (Full Control)</option>
+                    <option value="ORGANIZER">ORGANIZER (Events & Facilities)</option>
+                    <option value="STAFF">STAFF (Crowd & Alert Control)</option>
+                    <option value="VISITOR">VISITOR (View & Search Only)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Toast / Notification banner -->
+        <div id="toast" class="toast hidden"></div>
+
+        <!-- Section: Overview Metrics -->
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Monitored Facilities</div>
+                <div class="metric-value" id="metricTotalLocations">0</div>
+            </div>
+            <div class="metric-card alert-metric">
+                <div class="metric-title">Active Safety Alerts</div>
+                <div class="metric-value" id="metricActiveAlerts">0</div>
+            </div>
+            <div class="metric-card critical-metric">
+                <div class="metric-title">Critical Capacity Venues</div>
+                <div class="metric-value" id="metricCriticalCount">0</div>
+            </div>
+            <div class="metric-card update-metric">
+                <div class="metric-title">Total Headcount Logged</div>
+                <div class="metric-value" id="metricTotalHeadcount">0</div>
+            </div>
+        </section>
+
+        <!-- Section: Search & Filters -->
+        <section class="card filter-card">
+            <h2>🔍 Search & Filter Locations</h2>
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="searchName">Facility Name:</label>
+                    <input type="text" id="searchName" placeholder="e.g. Auditorium, Food Court..." oninput="handleSearch()">
+                </div>
+                <div class="filter-group">
+                    <label for="filterType">Location Type:</label>
+                    <select id="filterType" onchange="handleSearch()">
+                        <option value="ALL">All Types</option>
+                        <option value="ENTRANCE">ENTRANCE</option>
+                        <option value="FOOD_COURT">FOOD_COURT</option>
+                        <option value="AUDITORIUM">AUDITORIUM</option>
+                        <option value="PARKING">PARKING</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterLevel">Crowd Level:</label>
+                    <select id="filterLevel" onchange="handleSearch()">
+                        <option value="ALL">All Levels</option>
+                        <option value="LOW">LOW (&lt;40%)</option>
+                        <option value="MODERATE">MODERATE (40-69%)</option>
+                        <option value="HIGH">HIGH (70-89%)</option>
+                        <option value="CRITICAL">CRITICAL (&ge;90%)</option>
+                    </select>
+                </div>
+                <div class="filter-group btn-group">
+                    <button class="btn btn-secondary" onclick="resetSearch()">Reset Filters</button>
+                    <button class="btn btn-primary" onclick="loadLocations()">🔄 Refresh</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Live Crowd Status (Cards & Table) -->
+        <section class="card">
+            <div class="section-header">
+                <h2>📍 Live Facility Status</h2>
+                <span class="badge-info">Formula: Occupancy = (Count / Capacity) &times; 100</span>
+            </div>
+            <div id="locationGrid" class="locations-grid">
+                <!-- Location cards dynamically rendered -->
+            </div>
+        </section>
+
+        <!-- Section: Forms (Update Crowd & Manage Locations) -->
+        <div class="forms-split-grid">
+            <!-- Form: Update Crowd Count -->
+            <section class="card" id="updateCrowdSection">
+                <h2>⚡ Update Crowd Count</h2>
+                <form id="updateCrowdForm" onsubmit="handleUpdateCrowd(event)">
+                    <div class="form-group">
+                        <label for="updateLocationSelect">Select Facility:</label>
+                        <select id="updateLocationSelect" required>
+                            <option value="">-- Choose Facility --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newCrowdCount">New Estimated Headcount:</label>
+                        <input type="number" id="newCrowdCount" min="0" placeholder="e.g. 150" required>
+                    </div>
+                    <button type="submit" class="btn btn-success" id="btnUpdateCrowd">Submit Headcount Update</button>
+                    <small class="form-help">Requires STAFF, ORGANIZER, or ADMIN role.</small>
+                </form>
+            </section>
+
+            <!-- Form: Add or Edit Location -->
+            <section class="card" id="manageLocationSection">
+                <h2 id="locationFormTitle">🏢 Add Campus Facility</h2>
+                <form id="locationForm" onsubmit="handleSaveLocation(event)">
+                    <input type="hidden" id="editLocationId">
+                    <div class="form-group">
+                        <label for="locationName">Facility Name:</label>
+                        <input type="text" id="locationName" placeholder="e.g. East Campus Entrance" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="locationType">Facility Type:</label>
+                        <select id="locationType" required>
+                            <option value="ENTRANCE">ENTRANCE</option>
+                            <option value="FOOD_COURT">FOOD_COURT</option>
+                            <option value="AUDITORIUM">AUDITORIUM</option>
+                            <option value="PARKING">PARKING</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="locationCapacity">Designated Capacity:</label>
+                        <input type="number" id="locationCapacity" min="1" placeholder="e.g. 300" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="btnSaveLocation">Save Facility</button>
+                        <button type="button" class="btn btn-secondary hidden" id="btnCancelEdit" onclick="cancelEditLocation()">Cancel</button>
+                    </div>
+                    <small class="form-help">Requires ORGANIZER or ADMIN role.</small>
+                </form>
+            </section>
+        </div>
+
+        <!-- Section: Crowd Safety Alerts -->
+        <section class="card">
+            <div class="section-header">
+                <h2>🚨 Crowd Safety Alerts</h2>
+                <div class="filter-toggle">
+                    <label>
+                        <input type="checkbox" id="chkActiveOnly" onchange="loadAlerts()"> Active Alerts Only
+                    </label>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="alertsTable">
+                    <thead>
+                        <tr>
+                            <th>Alert ID</th>
+                            <th>Facility</th>
+                            <th>Severity</th>
+                            <th>Triggered Time</th>
+                            <th>Notification Message</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTableBody">
+                        <tr><td colspan="7" class="text-center">Loading alerts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section: Crowd History & Analysis -->
+        <div class="analytics-split-grid">
+            <!-- Overcrowding Analysis -->
+            <section class="card">
+                <h2>📈 Overcrowding Hotspot Analysis</h2>
+                <p class="section-desc">Facilities experiencing frequent HIGH (&ge;70%) and CRITICAL (&ge;90%) traffic:</p>
+                <div class="table-responsive">
+                    <table class="data-table" id="hotspotsTable">
+                        <thead>
+                            <tr>
+                                <th>Facility</th>
+                                <th>Type</th>
+                                <th>Capacity</th>
+                                <th>High/Critical Events</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hotspotsTableBody">
+                            <tr><td colspan="4" class="text-center">Loading analysis...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Crowd Update History Audit Trail -->
+            <section class="card">
+                <h2>📜 Crowd Update Audit Trail</h2>
+                <p class="section-desc">Recent headcount updates saved to CROWD_UPDATES:</p>
+                <div class="table-responsive table-scroll">
+                    <table class="data-table" id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>Update ID</th>
+                                <th>Facility</th>
+                                <th>Change</th>
+                                <th>Level</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="5" class="text-center">Loading history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <p>CrowdCheck &copy; 2026 Live Crowd Monitoring System | Spring Boot 3 & MySQL 8</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

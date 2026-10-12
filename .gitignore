@@ -1,8 +1,11 @@
-# Maven build output
+# Maven build artifacts
 target/
+*.jar
+*.war
+*.ear
 *.class
 
-# IDE & Editor files
+# IDE and Editor files
 .idea/
 .vscode/
 *.iml
@@ -17,11 +20,10 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Sensitive configuration files containing real passwords
-src/main/resources/db.properties
-db.properties
-!src/main/resources/db.properties.example
-
 # Log files
 *.log
 logs/
+
+# Local sensitive configuration overrides
+db.properties
+application-local.properties
